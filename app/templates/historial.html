@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Historial</h2>
+<form class="row g-3 mb-3">
+  <div class="col-md-3">
+    <label class="form-label">Desde</label>
+    <input type="date" name="date_start" value="{{ filters.date_start or '' }}" class="form-control">
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Hasta</label>
+    <input type="date" name="date_end" value="{{ filters.date_end or '' }}" class="form-control">
+  </div>
+  <div class="col-md-2">
+    <label class="form-label">Serie</label>
+    <select name="serie" class="form-select">
+      <option value="">Todas</option>
+      {% for s in series %}
+        <option value="{{ s.code }}" {% if filters.serie==s.code %}selected{% endif %}>{{ s.code }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2">
+    <label class="form-label">Estatus</label>
+    <select name="status" class="form-select">
+      <option value="">Todos</option>
+      <option value="success" {% if filters.status=='success' %}selected{% endif %}>Éxito</option>
+      <option value="failed" {% if filters.status=='failed' %}selected{% endif %}>Fallido</option>
+      <option value="pending" {% if filters.status=='pending' %}selected{% endif %}>Pendiente</option>
+    </select>
+  </div>
+  <div class="col-md-2 align-self-end">
+    <button class="btn btn-secondary" type="submit">Filtrar</button>
+  </div>
+</form>
+<div class="table-responsive">
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Fecha</th><th>Serie</th><th>Folio</th><th>Status</th><th>UUID</th><th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for inv in invoices %}
+        <tr>
+          <td>{{ inv.created_at }}</td>
+          <td>{{ inv.serie }}</td>
+          <td>{{ inv.folio }}</td>
+          <td><span class="badge bg-{% if inv.status=='success' %}success{% elif inv.status=='failed' %}danger{% else %}warning text-dark{% endif %}">{{ inv.status }}</span></td>
+          <td>{{ inv.uuid or '' }}</td>
+          <td>
+            {% if file_map.get(inv.id, {}).get('pdf') %}<a class="btn btn-sm btn-outline-primary" href="/download/{{ inv.id }}/pdf">PDF</a>{% endif %}
+            {% if file_map.get(inv.id, {}).get('xml') %}<a class="btn btn-sm btn-outline-secondary" href="/download/{{ inv.id }}/xml">XML</a>{% endif %}
+            {% if file_map.get(inv.id, {}).get('zip') %}<a class="btn btn-sm btn-outline-dark" href="/download/{{ inv.id }}/zip">ZIP</a>{% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

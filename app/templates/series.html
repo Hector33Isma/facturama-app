@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Series</h2>
+<form action="/series" method="post" class="row g-3 mb-4">
+  <div class="col-md-3">
+    <label class="form-label">Código</label>
+    <input type="text" name="code" class="form-control" required maxlength="10">
+  </div>
+  <div class="col-md-5">
+    <label class="form-label">Descripción</label>
+    <input type="text" name="description" class="form-control" required>
+  </div>
+  <div class="col-md-2 d-flex align-items-end">
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" name="is_active" value="true" id="activeCheck" checked>
+      <label class="form-check-label" for="activeCheck">Activa</label>
+    </div>
+  </div>
+  <div class="col-md-2 d-flex align-items-end">
+    <button class="btn btn-primary" type="submit">Guardar</button>
+  </div>
+</form>
+<table class="table table-bordered">
+  <thead>
+    <tr><th>Código</th><th>Descripción</th><th>Activa</th><th>Último folio</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for s in series %}
+      <tr>
+        <td>{{ s.code }}</td>
+        <td>{{ s.description }}</td>
+        <td>{{ 'Sí' if s.is_active else 'No' }}</td>
+        <td>{{ counters.get(s.code, 0) }}</td>
+        <td>
+          <form action="/series/{{ s.code }}/toggle" method="post">
+            <button class="btn btn-sm {% if s.is_active %}btn-warning{% else %}btn-success{% endif %}" type="submit">
+              {% if s.is_active %}Desactivar{% else %}Activar{% endif %}
+            </button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Timbrar Factura Global</h2>
+{% if error %}
+  {% if error is iterable and error is not string %}
+    <div class="alert alert-danger">
+      <ul class="mb-0">
+        {% for e in error %}<li>{{ e }}</li>{% endfor %}
+      </ul>
+    </div>
+  {% else %}
+    <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
+{% endif %}
+{% if message %}
+<div class="alert alert-success">{{ message }}</div>
+{% endif %}
+{% if error_excel %}
+<div class="alert alert-warning">Descarga el Excel con errores: <a href="{{ error_excel }}" target="_blank">{{ error_excel }}</a></div>
+{% endif %}
+<form action="/timbrar" method="post" enctype="multipart/form-data" class="card p-3">
+  <div class="row mb-3">
+    <div class="col-md-3">
+      <label class="form-label">Serie</label>
+      <select name="serie" class="form-select">
+        {% for s in series %}
+          <option value="{{ s.code }}" {% if s.code == selected_serie %}selected{% endif %} {% if not s.is_active %}disabled{% endif %}>
+            {{ s.code }} {% if not s.is_active %}(inactiva){% endif %}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Fecha de emisión</label>
+      <input type="date" name="issue_date" value="{{ today }}" class="form-control" max="{{ today }}" required>
+      <div class="form-text">Permite hasta 2 días atrás.</div>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Lugar de expedición (CP)</label>
+      <input type="text" name="expedition_place" class="form-control" placeholder="Usa CP del Excel si se deja vacío">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Observaciones</label>
+      <input type="text" name="observations" class="form-control">
+    </div>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Archivo Excel</label>
+    <input type="file" name="excel_file" accept=".xlsx" class="form-control" required>
+    <div class="form-text">1 archivo = 1 factura global. Usa la plantilla sample.xlsx.</div>
+  </div>
+  <button type="submit" class="btn btn-primary">Timbrar</button>
+</form>
+
+<div id="loadingOverlay" class="loading-overlay d-none">
+  <div class="loading-card text-center">
+    <div class="spinner-border text-light mb-3" role="status"></div>
+    <div>Timbrando factura</div>
+  </div>
+</div>
+
+<script>
+  const form = document.querySelector("form[action='/timbrar']");
+  const overlay = document.getElementById("loadingOverlay");
+  if (form && overlay) {
+    form.addEventListener("submit", () => {
+      overlay.classList.remove("d-none");
+    });
+  }
+</script>
+{% endblock %}

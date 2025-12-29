@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Consultar CFDIs (Facturama)</h2>
+{% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+<form action="/consultar" method="post" class="row g-3 mb-4">
+  <div class="col-md-4">
+    <label class="form-label">Fecha inicio</label>
+    <input type="date" name="date_start" value="{{ filters.date_start if filters else '' }}" class="form-control" required>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Fecha fin</label>
+    <input type="date" name="date_end" value="{{ filters.date_end if filters else '' }}" class="form-control" required>
+  </div>
+  <div class="col-md-2 d-flex align-items-end">
+    <button class="btn btn-primary" type="submit">Consultar</button>
+  </div>
+</form>
+{% if results %}
+  <div class="table-responsive">
+    <table class="table table-striped">
+      <thead><tr><th>Id</th><th>UUID</th><th>Fecha</th><th>Total</th></tr></thead>
+      <tbody>
+        {% for r in results.get('Data', []) %}
+          <tr>
+            <td>{{ r.get('Id') }}</td>
+            <td>{{ r.get('Uuid') }}</td>
+            <td>{{ r.get('Date') }}</td>
+            <td>{{ r.get('Total') }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.env
+.venv/
+venv/
+ENV/
+
+# FastAPI / Uvicorn
+*.log
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Archivos generados
+storage/
+facturas/
+downloads/
+uploads/
+
+# Excel / temporales
+*.xlsx
+*.csv
+*.tmp
+
+# SQLite (si usas)
+*.db

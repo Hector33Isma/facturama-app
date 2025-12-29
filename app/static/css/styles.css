@@ -1,0 +1,18 @@
+body { background-color: #f8f9fa; }
+.container { max-width: 1100px; }
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.loading-card {
+  color: #fff;
+  font-weight: 600;
+  padding: 24px 32px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.5);
+}

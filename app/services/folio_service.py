@@ -24,15 +24,19 @@ class FolioService:
     def next_folio(self, code: str) -> int:
         self.ensure_series(code)
         counter = self.session.get(SeriesCounter, code)
-        max_invoice_folio = (
-            self.session.scalar(select(func.max(Invoice.folio)).where(Invoice.serie == code)) or 0
-        )
         if not counter:
-            counter = SeriesCounter(series_code=code, last_folio=max_invoice_folio)
+            max_success = (
+                self.session.scalar(
+                    select(func.max(Invoice.folio)).where(
+                        Invoice.serie == code, Invoice.status == "success"
+                    )
+                )
+                or 0
+            )
+            counter = SeriesCounter(series_code=code, last_folio=max_success)
             self.session.add(counter)
             self.session.flush()
-        last_folio = max(counter.last_folio, max_invoice_folio)
-        return last_folio + 1
+        return counter.last_folio + 1
 
     def commit_folio(self, code: str, folio: int) -> None:
         counter = self.session.get(SeriesCounter, code)

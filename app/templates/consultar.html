@@ -20,7 +20,7 @@
     <table class="table table-striped">
       <thead><tr><th>Id</th><th>UUID</th><th>Fecha</th><th>Total</th></tr></thead>
       <tbody>
-        {% for r in results.get('Data', []) %}
+        {% for r in results %}
           <tr>
             <td>{{ r.get('Id') }}</td>
             <td>{{ r.get('Uuid') }}</td>
@@ -30,6 +30,19 @@
         {% endfor %}
       </tbody>
     </table>
+  </div>
+{% endif %}
+{% if debug %}
+  <button class="btn btn-outline-secondary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#debugDetails">
+    Detalles API
+  </button>
+  <div class="collapse" id="debugDetails">
+    <div class="card card-body">
+      <div><strong>Status code:</strong> {{ debug.status_code }}</div>
+      <div><strong>URL:</strong> {{ debug.url }}</div>
+      <div><strong>Exception:</strong> {{ debug.exception }}</div>
+      <pre class="mt-2">{{ debug.response_text }}</pre>
+    </div>
   </div>
 {% endif %}
 {% endblock %}

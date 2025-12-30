@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional
 
 from loguru import logger
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -45,20 +46,34 @@ class InvoicingService:
             }
 
         payload = excel_result.payload or {}
-        invoice = Invoice(
-            status="pending",
-            serie=serie,
-            folio=next_folio,
-            issue_date=issue_date,
-            excel_filename=excel_path.name,
-            request_json=json.dumps(payload, ensure_ascii=False),
+        existing_failed = self.session.scalar(
+            select(Invoice).where(
+                Invoice.serie == serie, Invoice.folio == next_folio, Invoice.status == "failed"
+            )
         )
-        self.session.add(invoice)
-        try:
-            self.session.flush()
-        except IntegrityError:
-            self.session.rollback()
-            return {"success": False, "errors": [f"El folio {next_folio} de la serie {serie} ya existe. Intenta de nuevo."]}
+        if existing_failed:
+            invoice = existing_failed
+            invoice.status = "pending"
+            invoice.error_message = None
+            invoice.request_json = json.dumps(payload, ensure_ascii=False)
+            invoice.response_json = None
+            invoice.issue_date = issue_date
+            invoice.excel_filename = excel_path.name
+        else:
+            invoice = Invoice(
+                status="pending",
+                serie=serie,
+                folio=next_folio,
+                issue_date=issue_date,
+                excel_filename=excel_path.name,
+                request_json=json.dumps(payload, ensure_ascii=False),
+            )
+            self.session.add(invoice)
+            try:
+                self.session.flush()
+            except IntegrityError:
+                self.session.rollback()
+                return {"success": False, "errors": [f"El folio {next_folio} de la serie {serie} ya existe. Intenta de nuevo."]}
 
         try:
             response = await self.facturama.create_cfdi(payload)
@@ -138,11 +153,14 @@ class InvoicingService:
         base_msg = "Error al timbrar factura"
         if status_txt:
             base_msg = f"{base_msg} {status_txt}"
-        if isinstance(exc.details, dict):
-            msg = exc.details.get("Message") or exc.details.get("message") or ""
+        details = exc.details
+        if isinstance(details, dict) and "response" in details:
+            details = details.get("response")
+        if isinstance(details, dict):
+            msg = details.get("Message") or details.get("message") or ""
             if msg:
                 errors.append(msg)
-            model_state = exc.details.get("ModelState")
+            model_state = details.get("ModelState")
             if isinstance(model_state, dict):
                 for key, vals in model_state.items():
                     if isinstance(vals, list):
@@ -150,8 +168,8 @@ class InvoicingService:
                             errors.append(f"{key}: {v}")
                     else:
                         errors.append(f"{key}: {vals}")
-        elif isinstance(exc.details, str):
-            errors.append(exc.details)
+        elif isinstance(details, str):
+            errors.append(details)
         if not errors:
             errors.append(str(exc))
         errors.insert(0, base_msg)

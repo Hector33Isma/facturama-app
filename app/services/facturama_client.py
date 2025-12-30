@@ -9,10 +9,13 @@ from app.core.config import settings
 
 
 class FacturamaError(Exception):
-    def __init__(self, message: str, status_code: int | None = None, details: Any | None = None):
+    def __init__(
+        self, message: str, status_code: int | None = None, details: Any | None = None, url: str | None = None
+    ):
         super().__init__(message)
         self.status_code = status_code
         self.details = details
+        self.url = url
 
 
 class FacturamaClient:
@@ -28,7 +31,7 @@ class FacturamaClient:
                 response = await client.request(method, url, **kwargs)
             except httpx.RequestError as exc:
                 logger.exception("HTTP request error to Facturama")
-                raise FacturamaError("No se pudo contactar Facturama", details=str(exc)) from exc
+                raise FacturamaError("No se pudo contactar Facturama", details=str(exc), url=url) from exc
 
         if response.status_code >= 400:
             detail: Any | None = None
@@ -42,7 +45,14 @@ class FacturamaClient:
                 message = detail.get("Message") or detail.get("message") or message
             elif isinstance(detail, str) and detail:
                 message = detail
-            raise FacturamaError(message, status_code=response.status_code, details=detail)
+            error_payload = {
+                "status_code": response.status_code,
+                "url": str(response.request.url),
+                "response": detail,
+            }
+            raise FacturamaError(
+                message, status_code=response.status_code, details=error_payload, url=str(response.request.url)
+            )
         if "application/json" in response.headers.get("content-type", ""):
             return response.json()
         return {"raw": response.content}

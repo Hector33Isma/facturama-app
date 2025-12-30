@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Series</h2>
+{% if msg %}<div class="alert alert-success">{{ msg }}</div>{% endif %}
+{% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
 <form action="/series" method="post" class="row g-3 mb-4">
   <div class="col-md-3">
     <label class="form-label">Código</label>
@@ -32,6 +34,12 @@
         <td>{{ 'Sí' if s.is_active else 'No' }}</td>
         <td>{{ counters.get(s.code, 0) }}</td>
         <td>
+          <form action="/series/{{ s.code }}/folio" method="post" class="d-inline">
+            <div class="input-group input-group-sm">
+              <input type="number" name="last_folio" class="form-control" min="0" value="{{ counters.get(s.code, 0) }}">
+              <button class="btn btn-outline-primary" type="submit">Editar último folio</button>
+            </div>
+          </form>
           <form action="/series/{{ s.code }}/toggle" method="post">
             <button class="btn btn-sm {% if s.is_active %}btn-warning{% else %}btn-success{% endif %}" type="submit">
               {% if s.is_active %}Desactivar{% else %}Activar{% endif %}

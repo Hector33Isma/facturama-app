@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 
-def test_home_ok():
+def test_login_page_ok():
     client = TestClient(app)
-    resp = client.get("/")
+    resp = client.get("/login")
     assert resp.status_code == 200

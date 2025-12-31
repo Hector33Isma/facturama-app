@@ -19,6 +19,7 @@
 <div class="alert alert-warning">Descarga el Excel con errores: <a href="{{ error_excel }}" target="_blank">{{ error_excel }}</a></div>
 {% endif %}
 <form action="/timbrar" method="post" enctype="multipart/form-data" class="card p-3">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
   <div class="row mb-3">
     <div class="col-md-3">
       <label class="form-label">Serie</label>
@@ -47,7 +48,10 @@
   <div class="mb-3">
     <label class="form-label">Archivo Excel</label>
     <input type="file" name="excel_file" accept=".xlsx" class="form-control" required>
-    <div class="form-text">1 archivo = 1 factura global. Usa la plantilla sample.xlsx.</div>
+    <div class="form-text">1 archivo = 1 factura global.</div>
+    <a href="{{ request.url_for('static', path='sample.xlsx') }}" download>
+      Usa la plantilla sample.xlsx
+    </a>
   </div>
   <button type="submit" class="btn btn-primary">Timbrar</button>
 </form>

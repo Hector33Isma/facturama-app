@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     default_serie: str = Field("ML", alias="DEFAULT_SERIE")
     facturas_storage_dir: Path = Field(default=Path("./storage/facturas"), alias="FACTURAS_STORAGE_DIR")
     environment: str = Field("development", alias="ENVIRONMENT")
+    secret_key: str = Field(..., alias="SECRET_KEY")
+    session_cookie_name: str = Field("session", alias="SESSION_COOKIE_NAME")
+    login_rate_limit_count: int = Field(5, alias="LOGIN_RATE_LIMIT_COUNT")
+    login_rate_limit_window: int = Field(600, alias="LOGIN_RATE_LIMIT_WINDOW")  # seconds
 
     class Config:
         env_file = ".env"

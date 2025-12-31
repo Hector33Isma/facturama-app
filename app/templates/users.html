@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Usuarios</h2>
+  <a class="btn btn-primary" href="/users/new">Nuevo usuario</a>
+</div>
+<div class="table-responsive">
+  <table class="table table-striped">
+    <thead>
+      <tr><th>ID</th><th>Usuario</th><th>Email</th><th>Nombre</th><th>Rol</th><th>Activo</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>{{ u.id }}</td>
+        <td>{{ u.username }}</td>
+        <td>{{ u.email }}</td>
+        <td>{{ u.full_name or '' }}</td>
+        <td>{{ u.role }}</td>
+        <td>{{ 'Sí' if u.is_active else 'No' }}</td>
+        <td class="d-flex gap-2">
+          <a class="btn btn-sm btn-outline-secondary" href="/users/{{ u.id }}/edit">Editar</a>
+          <form action="/users/{{ u.id }}/toggle-active" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="btn btn-sm {% if u.is_active %}btn-warning{% else %}btn-success{% endif %}" type="submit">
+              {% if u.is_active %}Desactivar{% else %}Activar{% endif %}
+            </button>
+          </form>
+          <form action="/users/{{ u.id }}/reset-password" method="post" class="d-flex">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="password" name="new_password" class="form-control form-control-sm" placeholder="Nueva contraseña" required>
+            <button class="btn btn-sm btn-outline-primary ms-1" type="submit">Reset</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

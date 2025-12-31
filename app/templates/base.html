@@ -17,6 +17,24 @@
         <li class="nav-item"><a class="nav-link" href="/historial">Historial</a></li>
         <li class="nav-item"><a class="nav-link" href="/series">Series</a></li>
         <li class="nav-item"><a class="nav-link" href="/consultar">Consultar CFDIs</a></li>
+        {% if user and user.role == 'admin' %}
+        <li class="nav-item"><a class="nav-link" href="/users">Usuarios</a></li>
+        {% endif %}
+      </ul>
+      <ul class="navbar-nav ms-auto">
+        {% if user %}
+          <li class="nav-item d-flex align-items-center text-white px-2">
+            {{ user.username }} ({{ user.role }})
+          </li>
+          <li class="nav-item">
+            <form action="/logout" method="post" class="d-flex">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button class="btn btn-outline-light btn-sm" type="submit">Cerrar sesión</button>
+            </form>
+          </li>
+        {% else %}
+          <li class="nav-item"><a class="nav-link" href="/login">Iniciar sesión</a></li>
+        {% endif %}
       </ul>
     </div>
   </div>

@@ -13,3 +13,5 @@ openpyxl
 python-multipart
 loguru
 pytest
+passlib[bcrypt]
+itsdangerous

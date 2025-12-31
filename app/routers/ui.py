@@ -6,18 +6,19 @@ from typing import Optional
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import and_, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.db import get_session
+from app.dependencies import csrf_protect, require_login
 from app.models.invoice import Invoice
 from app.models.series import Series, SeriesCounter
 from app.services.facturama_client import FacturamaClient, FacturamaError
 from app.services.invoicing_service import InvoicingService
 
 templates = Jinja2Templates(directory="app/templates")
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_login)])
 
 
 def _storage_uploads_dir() -> Path:
@@ -26,13 +27,31 @@ def _storage_uploads_dir() -> Path:
     return uploads
 
 
+def _ctx(request: Request, extra: dict | None = None):
+    base = {
+        "request": request,
+        "user": getattr(request.state, "user", None),
+        "csrf_token": request.state.session.get("csrf_token"),
+    }
+    if extra:
+        base.update(extra)
+    return base
+
+
 @router.get("/")
 async def home(request: Request, session: Session = Depends(get_session)):
     series = session.scalars(select(Series).order_by(Series.code)).all()
     selected = settings.default_serie if any(s.code == settings.default_serie for s in series) else (series[0].code if series else "")
     return templates.TemplateResponse(
         "timbrar.html",
-        {"request": request, "series": series, "selected_serie": selected, "today": date.today().isoformat()},
+        _ctx(
+            request,
+            {
+                "series": series,
+                "selected_serie": selected,
+                "today": date.today().isoformat(),
+            },
+        ),
     )
 
 
@@ -45,6 +64,7 @@ async def timbrar(
     observations: Optional[str] = Form(None),
     excel_file: UploadFile = File(...),
     session: Session = Depends(get_session),
+    csrf=Depends(csrf_protect),
 ):
     series = session.scalars(select(Series).order_by(Series.code)).all()
     parsed_date = date.fromisoformat(issue_date)
@@ -56,13 +76,15 @@ async def timbrar(
     except Exception:
         return templates.TemplateResponse(
             "timbrar.html",
-            {
-                "request": request,
-                "series": series,
-                "selected_serie": serie,
-                "error": "No se pudo guardar el archivo. Intenta de nuevo.",
-                "today": date.today().isoformat(),
-            },
+            _ctx(
+                request,
+                {
+                    "series": series,
+                    "selected_serie": serie,
+                    "error": "No se pudo guardar el archivo. Intenta de nuevo.",
+                    "today": date.today().isoformat(),
+                },
+            ),
             status_code=400,
         )
 
@@ -74,14 +96,18 @@ async def timbrar(
         expedition_place=expedition_place,
         observations=observations,
     )
-    context = {"request": request, "series": series, "selected_serie": serie, "today": date.today().isoformat()}
+    context = {
+        "series": series,
+        "selected_serie": serie,
+        "today": date.today().isoformat(),
+    }
     if result.get("success"):
         context["message"] = f"Factura timbrada correctamente. Serie {serie}, Folio {result.get('folio')}"
     else:
         context["error"] = result.get("errors") or ["Hubo errores al procesar el archivo."]
         if result.get("error_excel"):
             context["error_excel"] = result["error_excel"]
-    return templates.TemplateResponse("timbrar.html", context)
+    return templates.TemplateResponse("timbrar.html", _ctx(request, context))
 
 
 @router.get("/historial")
@@ -113,13 +139,15 @@ async def historial(
         file_map[inv.id] = {"pdf": pdf_ok, "xml": xml_ok, "zip": zip_ok}
     return templates.TemplateResponse(
         "historial.html",
-        {
-            "request": request,
-            "invoices": invoices,
-            "series": series,
-            "filters": {"date_start": date_start, "date_end": date_end, "serie": serie, "status": status},
-            "file_map": file_map,
-        },
+        _ctx(
+            request,
+            {
+                "invoices": invoices,
+                "series": series,
+                "filters": {"date_start": date_start, "date_end": date_end, "serie": serie, "status": status},
+                "file_map": file_map,
+            },
+        ),
     )
 
 
@@ -152,7 +180,15 @@ async def series_list(request: Request, session: Session = Depends(get_session))
     error = request.query_params.get("error")
     return templates.TemplateResponse(
         "series.html",
-        {"request": request, "series": series, "counters": counters, "msg": msg, "error": error},
+        _ctx(
+            request,
+            {
+                "series": series,
+                "counters": counters,
+                "msg": msg,
+                "error": error,
+            },
+        ),
     )
 
 
@@ -163,6 +199,7 @@ async def series_create(
     description: str = Form(...),
     is_active: Optional[bool] = Form(False),
     session: Session = Depends(get_session),
+    csrf=Depends(csrf_protect),
 ):
     existing = session.get(Series, code)
     if existing:
@@ -175,7 +212,7 @@ async def series_create(
 
 
 @router.post("/series/{code}/toggle")
-async def series_toggle(code: str, session: Session = Depends(get_session)):
+async def series_toggle(code: str, session: Session = Depends(get_session), csrf=Depends(csrf_protect)):
     series = session.get(Series, code)
     if series:
         series.is_active = not series.is_active
@@ -185,7 +222,10 @@ async def series_toggle(code: str, session: Session = Depends(get_session)):
 
 @router.post("/series/{code}/folio")
 async def series_update_folio(
-    code: str, last_folio: str = Form(...), session: Session = Depends(get_session)
+    code: str,
+    last_folio: str = Form(...),
+    session: Session = Depends(get_session),
+    csrf=Depends(csrf_protect),
 ):
     series = session.get(Series, code)
     if not series:
@@ -208,7 +248,10 @@ async def series_update_folio(
 
 @router.get("/consultar")
 async def consultar_form(request: Request):
-    return templates.TemplateResponse("consultar.html", {"request": request, "results": []})
+    return templates.TemplateResponse(
+        "consultar.html",
+        _ctx(request, {"results": []}),
+    )
 
 
 @router.post("/consultar")
@@ -216,6 +259,7 @@ async def consultar(
     request: Request,
     date_start: str = Form(...),
     date_end: str = Form(...),
+    csrf=Depends(csrf_protect),
 ):
     client = FacturamaClient()
     error = None
@@ -261,11 +305,13 @@ async def consultar(
         }
     return templates.TemplateResponse(
         "consultar.html",
-        {
-            "request": request,
-            "results": results,
-            "error": error,
-            "filters": {"date_start": date_start, "date_end": date_end},
-            "debug": debug,
-        },
+        _ctx(
+            request,
+            {
+                "results": results,
+                "error": error,
+                "filters": {"date_start": date_start, "date_end": date_end},
+                "debug": debug,
+            },
+        ),
     )

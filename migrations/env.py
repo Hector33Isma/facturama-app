@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.core.db import Base
 from app.models.invoice import Invoice, InvoiceItem  # noqa: F401
 from app.models.series import Series, SeriesCounter  # noqa: F401
+from app.models.user import User, AuditLog  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

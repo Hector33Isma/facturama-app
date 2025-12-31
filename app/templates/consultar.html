@@ -3,6 +3,7 @@
 <h2>Consultar CFDIs (Facturama)</h2>
 {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
 <form action="/consultar" method="post" class="row g-3 mb-4">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
   <div class="col-md-4">
     <label class="form-label">Fecha inicio</label>
     <input type="date" name="date_start" value="{{ filters.date_start if filters else '' }}" class="form-control" required>

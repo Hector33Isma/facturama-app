@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     session_cookie_name: str = Field("session", alias="SESSION_COOKIE_NAME")
     login_rate_limit_count: int = Field(5, alias="LOGIN_RATE_LIMIT_COUNT")
     login_rate_limit_window: int = Field(600, alias="LOGIN_RATE_LIMIT_WINDOW")  # seconds
+    session_max_age_seconds: int = Field(1800, alias="SESSION_MAX_AGE_SECONDS")  # 30 min por defecto
+    cors_allowed_origins: list[str] = Field(default_factory=lambda: ["*"], alias="CORS_ALLOWED_ORIGINS")
 
     class Config:
         env_file = ".env"

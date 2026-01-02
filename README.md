@@ -14,6 +14,10 @@ pip install -r requirements.txt
 copy .env.example .env     # en Linux/macOS: cp .env.example .env
 ```
 Edita `.env` con credenciales Facturama y define `SECRET_KEY`.
+Variables nuevas relevantes:
+- `ENVIRONMENT` (`development`/`production`)
+- `SESSION_MAX_AGE_SECONDS` (segundos de vigencia de la cookie de sesión, ej. 1800)
+- `CORS_ALLOWED_ORIGINS` (en prod se fuerza a https://facturas.refacciones.site)
 
 ## Base de datos y migraciones
 ```powershell
@@ -36,6 +40,7 @@ uvicorn app.main:app --reload
 ```
 UI: http://127.0.0.1:8000  
 Rutas abiertas: `/login`, `/static/*`. El resto exige sesión. Rol `admin` requerido para `/users*`.
+En producción (`ENVIRONMENT=production`): `/docs`, `/redoc` y `/openapi.json` están deshabilitados (404).
 
 ## Funcionalidad principal
 - **Timbrar Factura Global:** carga Excel (`sample.xlsx` de ejemplo), valida columnas y totales, genera CFDI (POST /3/cfdis). Si hay errores, genera Excel con columna `Errores`.
